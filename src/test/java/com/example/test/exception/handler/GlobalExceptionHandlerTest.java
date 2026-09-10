@@ -51,8 +51,14 @@ class GlobalExceptionHandlerTest {
                 () -> Assertions.assertNotNull(response),
                 () -> Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode()),
                 () -> Assertions.assertNotNull(response.getBody()),
-                () -> Assertions.assertTrue(response.getBody().message().contains("Internal server error")),
-                () -> Assertions.assertFalse(response.getBody().message().contains("Unexpected database failure")) // upewniamy się, że nie wyciekają szczegóły techniczne
+                () -> {
+                    assert response.getBody() != null;
+                    Assertions.assertTrue(response.getBody().message().contains("Internal server error"));
+                },
+                () -> {
+                    assert response.getBody() != null;
+                    Assertions.assertFalse(response.getBody().message().contains("Unexpected database failure"));
+                }
         );
     }
 }

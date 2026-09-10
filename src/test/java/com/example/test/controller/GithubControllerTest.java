@@ -18,17 +18,23 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 public class GithubControllerTest {
+
     @Autowired
     MockMvc mockMvc;
+
     @MockitoBean
     GithubService githubService;
 
@@ -161,6 +167,113 @@ public class GithubControllerTest {
                 .andExpect(jsonPath("$.message", Matchers.containsString("Repository entity Non-Existing-Repo doesn't exists")));
 
         Mockito.verify(githubService).getLocalRepositoryDetails(ownerCaptor.capture(), repoNameCaptor.capture());
+        Assertions.assertAll(
+                () -> Assertions.assertEquals("octocat", ownerCaptor.getValue()),
+                () -> Assertions.assertEquals("Non-Existing-Repo", repoNameCaptor.getValue())
+        );
+    }
+
+    @Test
+    void updateRepository_repositoryExists_returnsUpdatedRepositoryResponse() throws Exception {
+        //given
+        String owner = "octocat";
+        String repoName = "Hello-World";
+        RepositoryResponse repositoryResponse = new RepositoryResponse(
+                1L,
+                owner,
+                repoName,
+                "octocat/Hello-World",
+                "Updated description",
+                "https://github.com/octocat/Hello-World.git",
+                100,
+                "2011-01-26T19:01:12Z"
+        );
+        ArgumentCaptor<String> ownerCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> repoNameCaptor = ArgumentCaptor.forClass(String.class);
+
+        when(githubService.updateRepositoryDetails(anyString(), anyString())).thenReturn(repositoryResponse);
+
+        //when + then
+        mockMvc.perform(put("/repositories/{owner}/{repositoryName}", owner, repoName)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fullName").value("octocat/Hello-World"))
+                .andExpect(jsonPath("$.description").value("Updated description"))
+                .andExpect(jsonPath("$.cloneUrl").value("https://github.com/octocat/Hello-World.git"))
+                .andExpect(jsonPath("$.stars").value(100))
+                .andExpect(jsonPath("$.createdAt").value("2011-01-26T19:01:12Z"));
+
+        Mockito.verify(githubService).updateRepositoryDetails(ownerCaptor.capture(), repoNameCaptor.capture());
+        Assertions.assertAll(
+                () -> Assertions.assertEquals("octocat", ownerCaptor.getValue()),
+                () -> Assertions.assertEquals("Hello-World", repoNameCaptor.getValue())
+        );
+    }
+
+    @Test
+    void updateRepository_repositoryNotExists_returnsNotFoundWithMessage() throws Exception {
+        //given
+        String owner = "octocat";
+        String repoName = "Non-Existing-Repo";
+        ArgumentCaptor<String> ownerCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> repoNameCaptor = ArgumentCaptor.forClass(String.class);
+
+        when(githubService.updateRepositoryDetails(anyString(), anyString()))
+                .thenThrow(new RepositoryEntityNotFoundException(repoName));
+
+        //when + then
+        mockMvc.perform(put("/repositories/{owner}/{repositoryName}", owner, repoName)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", Matchers.containsString("Repository entity Non-Existing-Repo doesn't exists")));
+
+        Mockito.verify(githubService).updateRepositoryDetails(ownerCaptor.capture(), repoNameCaptor.capture());
+        Assertions.assertAll(
+                () -> Assertions.assertEquals("octocat", ownerCaptor.getValue()),
+                () -> Assertions.assertEquals("Non-Existing-Repo", repoNameCaptor.getValue())
+        );
+    }
+
+    @Test
+    void deleteRepository_repositoryExists_returnsNoContent() throws Exception {
+        //given
+        String owner = "octocat";
+        String repoName = "Hello-World";
+        ArgumentCaptor<String> ownerCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> repoNameCaptor = ArgumentCaptor.forClass(String.class);
+
+        doNothing().when(githubService).deleteRepositoryDetails(anyString(), anyString());
+
+        //when + then
+        mockMvc.perform(delete("/repositories/{owner}/{repositoryName}", owner, repoName)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent());
+
+        Mockito.verify(githubService).deleteRepositoryDetails(ownerCaptor.capture(), repoNameCaptor.capture());
+        Assertions.assertAll(
+                () -> Assertions.assertEquals("octocat", ownerCaptor.getValue()),
+                () -> Assertions.assertEquals("Hello-World", repoNameCaptor.getValue())
+        );
+    }
+
+    @Test
+    void deleteRepository_repositoryNotExists_returnsNotFoundWithMessage() throws Exception {
+        //given
+        String owner = "octocat";
+        String repoName = "Non-Existing-Repo";
+        ArgumentCaptor<String> ownerCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> repoNameCaptor = ArgumentCaptor.forClass(String.class);
+
+        doThrow(new RepositoryEntityNotFoundException(repoName))
+                .when(githubService).deleteRepositoryDetails(anyString(), anyString());
+
+        //when + then
+        mockMvc.perform(delete("/repositories/{owner}/{repositoryName}", owner, repoName)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", Matchers.containsString("Repository entity Non-Existing-Repo doesn't exists")));
+
+        Mockito.verify(githubService).deleteRepositoryDetails(ownerCaptor.capture(), repoNameCaptor.capture());
         Assertions.assertAll(
                 () -> Assertions.assertEquals("octocat", ownerCaptor.getValue()),
                 () -> Assertions.assertEquals("Non-Existing-Repo", repoNameCaptor.getValue())

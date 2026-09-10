@@ -15,14 +15,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(GithubProxyException.class)
     ResponseEntity<ErrorMessageDto> handleGithubProxyException(GithubProxyException ex) {
-        log.warn("Handled business exception: {} - {}", ex.getClass().getSimpleName(), ex.getMessage());
+        log.warn("Handled business exception: [{}] Status: {} - Message: {}",
+                ex.getClass().getSimpleName(),
+                ex.getHttpStatus(),
+                ex.getMessage());
+        log.debug("Exception stack trace:", ex);
+
         String message = LocalDateTime.now() + ": " + ex.getMessage();
         return ResponseEntity.status(ex.getHttpStatus()).body(new ErrorMessageDto(message));
     }
 
     @ExceptionHandler(Exception.class)
     ResponseEntity<ErrorMessageDto> handleUnexpectedException(Exception ex) {
-        log.error("Unhandled exception occurred: ", ex);
+        log.error("Unhandled exception occurred: [{}] - {}", ex.getClass().getName(), ex.getMessage(), ex);
+
         String message = LocalDateTime.now() + ": Internal server error";
         return ResponseEntity.internalServerError().body(new ErrorMessageDto(message));
     }
