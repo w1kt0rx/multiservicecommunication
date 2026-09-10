@@ -1,4 +1,4 @@
-package com.example.test;
+package com.example.test.client;
 
 import com.example.test.dto.response.GithubResponse;
 import org.springframework.cloud.openfeign.FeignClient;
