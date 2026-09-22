@@ -1,0 +1,11 @@
+{
+  "owner": {
+    "login": "octocat"
+  },
+  "name": "Hello-World",
+  "full_name": "octocat/Hello-World",
+  "description": "This is your first repo!",
+  "clone_url": "https://github.com/octocat/Hello-World.git",
+  "stargazers_count": 1337,
+  "created_at": "2011-01-26T19:01:12Z"
+}
