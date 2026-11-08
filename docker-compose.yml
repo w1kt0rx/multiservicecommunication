@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.18
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - elk-network
+
+  logstash:
+    build:
+      context: ./logstash
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    networks:
+      - elk-network
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.18
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - elk-network
+    depends_on:
+      - elasticsearch
+
+  proxy:
+    image: 'githubproxy:latest'
+    build:
+      context: .
+    container_name: proxy
+    ports:
+      - "8080:8080"
+    environment:
+      - LOGSTASH_HOST=logstash
+    networks:
+      - elk-network
+    depends_on:
+      - logstash
+
+volumes:
+  es_data:
+
+networks:
+  elk-network:
+    driver: bridge

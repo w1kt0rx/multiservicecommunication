@@ -48,6 +48,15 @@
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.logstash.logback</groupId>
+			<artifactId>logstash-logback-encoder</artifactId>
+			<version>7.2</version>
+		</dependency>
+		<dependency>
 			<groupId>org.wiremock.integrations</groupId>
 			<artifactId>wiremock-spring-boot</artifactId>
 			<version>3.0.0</version>
